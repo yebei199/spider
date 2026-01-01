@@ -1,6 +1,26 @@
 //! Detect Chrome executable path
 
-/// Get the chrome executable path.
+use std::sync::OnceLock;
+
+static CHROME_NAMES: &[&str] = &[
+    "google-chrome-stable",
+    "chromium",
+    "google-chrome",
+    "chrome",
+    "chromium-browser",
+];
+
+static FALLBACK_PATHS: &[&str] = &[
+    "/run/current-system/sw/bin/google-chrome-stable",
+    "/run/current-system/sw/bin/chromium",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/google-chrome",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+];
+
 pub fn get_detect_chrome_executable() -> Option<String> {
     // 1. Check CHROME_BIN environment variable
     if let Ok(path) = std::env::var("CHROME_BIN") {
@@ -8,15 +28,7 @@ pub fn get_detect_chrome_executable() -> Option<String> {
     }
 
     // 2. Check standard executables in PATH using `which`
-    let chrome_names = [
-        "google-chrome-stable",
-        "chromium",
-        "google-chrome",
-        "chrome",
-        "chromium-browser",
-    ];
-
-    for name in &chrome_names {
+    for name in CHROME_NAMES {
         if let Ok(output) = std::process::Command::new("which")
             .arg(name)
             .output()
@@ -31,18 +43,7 @@ pub fn get_detect_chrome_executable() -> Option<String> {
     }
 
     // 3. Check hardcoded fallback paths (NixOS, macOS, etc.)
-    let fallback_paths = [
-        "/run/current-system/sw/bin/google-chrome-stable",
-        "/run/current-system/sw/bin/chromium",
-        "/usr/bin/google-chrome-stable",
-        "/usr/bin/chromium",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/google-chrome",
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    ];
-
-    for path in fallback_paths.iter() {
+    for path in FALLBACK_PATHS.iter() {
         if std::path::Path::new(path).exists() {
             return Some(path.to_string());
         }
@@ -59,7 +60,6 @@ mod test {
     async fn test_chrome_path() -> () {
         let path = get_detect_chrome_executable();
         assert!(path.is_some(), "Chrome executable should be found");
-        dbg!( path);
-
+        dbg!(path);
     }
 }
