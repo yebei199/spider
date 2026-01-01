@@ -80,6 +80,6 @@ mod test {
     async fn test_detect_chrome() {
         let path = get_detect_chrome_executable();
         assert!(path.is_some());
-        println!("Chrome path: {}", path.unwrap());
+        dbg!(path.unwrap());
     }
 }
