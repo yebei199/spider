@@ -15,6 +15,7 @@ pub mod interner;
 pub mod trie;
 /// Validate html false positives.
 pub mod validation;
+mod detect_chrome;
 
 use crate::{
     page::{AntiBotTech, Metadata, STREAMING_CHUNK_SIZE},
