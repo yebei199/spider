@@ -103,6 +103,30 @@ pub async fn set_cookies(config: &Configuration, url_parsed: &Option<Box<Url>>, 
     }
 }
 
+/// Get the chrome executable path.
+pub fn get_detect_chrome_executable() -> Option<String> {
+    if let Ok(path) = std::env::var("CHROME_BIN") {
+        return Some(path);
+    }
+    // Check for NixOS and other paths
+    let paths = [
+        "/run/current-system/sw/bin/google-chrome-stable",
+        "/run/current-system/sw/bin/chromium",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    ];
+    for path in paths.iter() {
+        if std::path::Path::new(path).exists() {
+            return Some(path.to_string());
+        }
+    }
+    None
+}
+
 /// get chrome configuration
 #[cfg(not(feature = "chrome_headed"))]
 pub fn get_browser_config(
@@ -154,13 +178,9 @@ pub fn get_browser_config(
         }
         _ => builder.args(CHROME_ARGS),
     };
-    let builder = if std::env::var("CHROME_BIN").is_ok() {
-        match std::env::var("CHROME_BIN") {
-            Ok(v) => builder.chrome_executable(v),
-            _ => builder,
-        }
-    } else {
-        builder
+    let builder = match get_detect_chrome_executable() {
+        Some(v) => builder.chrome_executable(v),
+        _ => builder,
     };
 
     match builder.viewport(viewport).build() {
@@ -229,13 +249,9 @@ pub fn get_browser_config(
         }
         _ => builder.args(chrome_args),
     };
-    let builder = if std::env::var("CHROME_BIN").is_ok() {
-        match std::env::var("CHROME_BIN") {
-            Ok(v) => builder.chrome_executable(v),
-            _ => builder,
-        }
-    } else {
-        builder
+    let builder = match get_detect_chrome_executable() {
+        Some(v) => builder.chrome_executable(v),
+        _ => builder,
     };
     match builder.viewport(viewport).build() {
         Ok(b) => Some(b),
